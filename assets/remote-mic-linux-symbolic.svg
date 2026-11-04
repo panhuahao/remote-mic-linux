@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+ <title>Remote Mic Linux</title>
+ <g fill="none" stroke="#ededed" stroke-width="1.8" stroke-linecap="round">
+  <rect x="3" y="2" width="11" height="20" rx="2"/>
+  <circle cx="8.5" cy="9" r="2.3"/>
+  <path d="M7 16h3M17 10v4m3-7v10m3-6v2"/>
+ </g>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<title>Remote Mic Linux</title>
+<desc>Original silver remote with straight sides, circular clickpad and voice waveform.</desc>
+<defs>
+ <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1d4a4d"/><stop offset="1" stop-color="#102f34"/></linearGradient>
+ <linearGradient id="silver" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#bbc9cb"/><stop offset=".24" stop-color="#eff5f4"/><stop offset=".76" stop-color="#dfe9e8"/><stop offset="1" stop-color="#a5b8bb"/></linearGradient>
+</defs>
+<rect x="8" y="8" width="240" height="240" rx="54" fill="url(#background)"/>
+<rect x="64" y="31" width="92" height="200" rx="19" fill="#0b262a" opacity=".35"/>
+<rect x="58" y="26" width="92" height="200" rx="17" fill="url(#silver)"/>
+<rect x="61" y="29" width="86" height="194" rx="14" fill="none" stroke="#ffffff" stroke-opacity=".46"/>
+<circle cx="104" cy="80" r="31" fill="#8d9fa3"/>
+<circle cx="104" cy="80" r="29" fill="#c4d2d3"/>
+<circle cx="104" cy="80" r="19" fill="#223d43"/>
+<circle cx="104" cy="80" r="16" fill="#304e54"/>
+<path d="M104 54v3m0 46v3M78 80h3m46 0h3" stroke="#718b91" stroke-width="2.5" stroke-linecap="round"/>
+<rect x="74" y="126" width="24" height="23" rx="11.5" fill="#29464d"/>
+<path d="M88 133l-5 5 5 5" fill="none" stroke="#e3edeb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="111" y="126" width="24" height="23" rx="11.5" fill="#29464d"/>
+<rect x="117" y="133" width="12" height="8" rx="1.5" fill="none" stroke="#e3edeb" stroke-width="2"/>
+<rect x="74" y="162" width="24" height="24" rx="12" fill="#29464d"/>
+<path d="M82 169l7 5-7 5z" fill="#e3edeb"/>
+<rect x="111" y="161" width="24" height="47" rx="12" fill="#29464d"/>
+<path d="M119 173h8m-4-4v8m-4 21h8" fill="none" stroke="#e3edeb" stroke-width="2" stroke-linecap="round"/>
+<circle cx="86" cy="204" r="4" fill="#418d79"/>
+<path d="M177 111v32m19-50v69m19-53v37" stroke="#69e3ba" stroke-width="9" stroke-linecap="round"/>
+</svg>

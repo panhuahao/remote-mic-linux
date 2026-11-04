@@ -1,0 +1,75 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+window.bridge-app, dialog.bridge-app { background: #f4f7f7; color: #233c43; font-family: "Noto Sans CJK SC", "Ubuntu", sans-serif; font-size: 13px; }
+.bridge-app .sidebar { background: #15383c; padding: 24px 16px 18px; }
+.bridge-app .brand-name { color: #f3fbf8; font-size: 17px; font-weight: 700; }
+.bridge-app .brand-subtitle { color: #92b7b3; font-size: 10px; letter-spacing: 1px; }
+.bridge-app .sidebar-section { color: #80a6a4; font-size: 11px; padding: 22px 12px 8px; }
+.bridge-app button.nav-item { background: transparent; background-image: none; color: #bfd5d2; border: none; border-radius: 10px; box-shadow: none; padding: 13px 12px; margin-bottom: 5px; }
+.bridge-app button.nav-item:hover { background: #23494c; color: #ffffff; }
+.bridge-app button.nav-item.active { background: #2d5656; color: #b4f3d9; font-weight: 700; }
+.bridge-app .sidebar-device { background: #214549; border-radius: 12px; padding: 14px; }
+.bridge-app .sidebar-device-title { color: #e2f0eb; font-weight: 600; }
+.bridge-app .sidebar-note { color: #91b2b0; font-size: 11px; }
+.bridge-app .sidebar-footer { padding: 12px 8px 0; }
+.bridge-app .sidebar-version { color: #91b2b0; font-size: 11px; }
+.bridge-app button.github-link { background: transparent; border: none; border-radius: 8px; padding: 7px; min-height: 18px; }
+.bridge-app button.github-link:hover { background: #2d5656; }
+.bridge-app .page-header { padding: 23px 24px 17px; }
+.bridge-app .page-title { color: #183b40; font-size: 25px; font-weight: 700; }
+.bridge-app .subtitle { color: #7a8e93; font-size: 12px; }
+.bridge-app .connection-bar { background: #ffffff; border: 1px solid #e1e9e8; border-radius: 12px; padding: 12px; }
+.bridge-app .card { background: #ffffff; border: 1px solid #e1e9e8; border-radius: 14px; padding: 18px; }
+.bridge-app .card-title { color: #27474c; font-size: 15px; font-weight: 700; }
+.bridge-app .eyebrow { color: #899d9f; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+.bridge-app .muted { color: #7e9296; font-size: 11px; }
+.bridge-app .hint { color: #698086; font-size: 12px; }
+.bridge-app .notice { background: #eaf5f0; border-radius: 10px; color: #4b786c; padding: 11px 14px; }
+.bridge-app .status-pill { background: #e8efef; border-radius: 14px; color: #6c8588; font-size: 11px; padding: 7px 12px; }
+.bridge-app .status-pill.connected { background: #e1f4eb; color: #238067; }
+.bridge-app .status-pill.working { background: #fff0da; color: #997134; }
+.bridge-app .status-pill.error { background: #fbe9e5; color: #ae5b4c; }
+.bridge-app button { background: #ffffff; background-image: none; color: #35555a; border: 1px solid #dbe6e4; border-radius: 8px; box-shadow: none; text-shadow: none; padding: 8px 13px; min-height: 18px; }
+.bridge-app button:hover { background: #f0f7f4; border-color: #a8cbbc; }
+.bridge-app button:active { background: #deeee7; }
+.bridge-app button:disabled { color: #abb9b9; background: #f5f8f7; border-color: #e5ecea; }
+.bridge-app button.primary { background: #2b9076; border-color: #2b9076; color: #ffffff; font-weight: 600; }
+.bridge-app button.primary:hover { background: #237b64; border-color: #237b64; }
+.bridge-app button.secondary { background: #edf6f1; border-color: #d8e9df; color: #397d66; }
+.bridge-app button.quiet { background: transparent; border-color: transparent; color: #869b9d; }
+.bridge-app button.quiet:hover { background: #edf3f2; }
+.bridge-app entry { background: #f8faf9; border: 1px solid #dfe8e6; border-radius: 8px; box-shadow: none; color: #35545b; padding: 9px 11px; min-height: 18px; caret-color: #2b9076; }
+.bridge-app entry:focus { background: #ffffff; border-color: #5aaf91; box-shadow: 0 0 0 2px alpha(#5aaf91, 0.1); }
+.bridge-app combobox button { background: #f8faf9; }
+.bridge-app check { border-radius: 5px; border: 1px solid #c6d9d1; background: #ffffff; }
+.bridge-app check:checked { background: #2b9076; border-color: #2b9076; color: #ffffff; }
+.bridge-app switch { background: #d8e4df; border-radius: 20px; border: none; }
+.bridge-app switch:checked { background: #2b9076; }
+.bridge-app switch slider { background: #ffffff; border-radius: 20px; border: none; min-width: 18px; min-height: 18px; }
+.bridge-app notebook { background: transparent; border: none; }
+.bridge-app notebook > stack { background: transparent; border: none; }
+.bridge-app viewport { background: transparent; }
+.bridge-app scrolledwindow { border: none; }
+.bridge-app scrollbar { background: transparent; }
+.bridge-app scrollbar slider { background: #c7d7d2; border-radius: 10px; min-width: 5px; min-height: 22px; }
+.bridge-app .table-header { background: #f3f7f5; border-radius: 7px; padding: 9px 10px; color: #7b9191; font-size: 11px; }
+.bridge-app .mapping-key { color: #4d6a70; font-size: 12px; padding: 4px 3px; }
+.bridge-app button.mapping-action { padding: 4px 9px; min-height: 14px; font-size: 12px; background: #f7faf8; border-color: #e6eeea; }
+.bridge-app button.mapping-action.unset { color: #a4b6b2; background: transparent; border: 1px dashed #e1e9e5; }
+.bridge-app button.mapping-action:hover { background: #eaf5ef; border-color: #9dc5b2; color: #2c725a; }
+.bridge-app .remote-shell { background: #203f44; border: 1px solid #153338; border-radius: 35px; padding: 18px 14px; box-shadow: 0 9px 18px alpha(#173b3e, 0.12); }
+.bridge-app button.remote-key { min-width: 23px; min-height: 23px; padding: 7px; border-radius: 13px; color: #d7e8e2; background: #345258; border: 1px solid #3d5e62; font-size: 16px; }
+.bridge-app button.remote-key:hover { background: #477169; border-color: #69a087; }
+.bridge-app button.remote-ok { background: #81c8ac; color: #173e39; border-color: #81c8ac; font-size: 12px; font-weight: 700; }
+.bridge-app button.remote-small { font-size: 11px; }
+.bridge-app .remote-mic { background: #2e5f59; border: 1px solid #478573; color: #b0e8cf; border-radius: 12px; padding: 9px; font-size: 12px; }
+.bridge-app button.key-active { background: #7ce4b4; border-color: #7ce4b4; color: #173c30; }
+.bridge-app .remote-label { color: #a1bcb5; font-size: 9px; letter-spacing: 1px; }
+.bridge-app .capture-card { background: #edf6f2; border: 1px solid #d7e9e1; border-radius: 14px; padding: 18px; }
+.bridge-app .voice-state { color: #32725e; font-size: 18px; font-weight: 700; }
+.bridge-app textview { color: #36575b; background: #f9fbfa; padding: 12px; border-radius: 9px; }
+.bridge-app textview text { background: #f9fbfa; }
+.bridge-app textview.log-view, .bridge-app textview.log-view text { background: #203b40; color: #b9d4c7; font-size: 11px; }
+.bridge-app levelbar trough { background: #d7e8df; border: none; padding: 0; min-height: 5px; border-radius: 4px; }
+.bridge-app levelbar block.filled { background: #54b78c; border: none; border-radius: 4px; }
+.bridge-app levelbar block.empty { background: transparent; border: none; }
+.bridge-app .bottom-strip { color: #94a6a5; font-size: 10px; padding: 9px 24px 14px; }

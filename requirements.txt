@@ -1,0 +1,6 @@
+bleak==3.0.2
+evdev==2.0.0
+dbus-fast==5.2.0
+sherpa-onnx==2.0.1
+numpy>=2.2,<3
+websockets==15.0.1

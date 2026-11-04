@@ -1,0 +1,70 @@
+{
+  "address": "",
+  "mapping_enabled": true,
+  "mapping": {
+    "KEY_UP": [
+      "KEY_UP"
+    ],
+    "KEY_DOWN": [
+      "KEY_DOWN"
+    ],
+    "KEY_LEFT": [
+      "KEY_LEFT"
+    ],
+    "KEY_RIGHT": [
+      "KEY_RIGHT"
+    ],
+    "KEY_ENTER": [
+      "KEY_ENTER"
+    ],
+    "KEY_BACK": [
+      "KEY_BACKSPACE"
+    ],
+    "KEY_ESC": [
+      "KEY_BACKSPACE"
+    ],
+    "KEY_HOMEPAGE": [
+      "KEY_LEFTMETA"
+    ],
+    "KEY_HOME": [
+      "KEY_LEFTMETA"
+    ],
+    "KEY_MENU": [
+      "KEY_COMPOSE"
+    ],
+    "KEY_TV": [
+      "KEY_LEFTALT",
+      "KEY_TAB"
+    ],
+    "KEY_POWER": [
+      "KEY_ESC"
+    ],
+    "KEY_VOLUMEUP": [
+      "KEY_VOLUMEUP"
+    ],
+    "KEY_VOLUMEDOWN": [
+      "KEY_VOLUMEDOWN"
+    ],
+    "KEY_MUTE": [
+      "KEY_MUTE"
+    ],
+    "KEY_F5": [],
+    "KEY_VOICECOMMAND": []
+  },
+  "voice_shortcut": [],
+  "voice_shortcut_mode": "hold",
+  "gestures": {},
+  "voice": {
+    "mode": "local",
+    "language": "auto",
+    "model_dir": "~/.cache/ubuntu-remote-bridge/sensevoice",
+    "auto_insert": true,
+    "paste_shortcut": [
+      "KEY_LEFTCTRL",
+      "KEY_V"
+    ],
+    "youdao_api": "large",
+    "youdao_language": "zh-CHS",
+    "youdao_model": "multi-lang-stream-fast-v1"
+  }
+}

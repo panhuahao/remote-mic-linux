@@ -1,0 +1,24 @@
+name: Tests
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv python3-dev python3-gi gir1.2-gtk-3.0 gir1.2-atspi-2.0 build-essential
+      - name: Install Python dependencies
+        run: |
+          python3 -m venv --system-site-packages .venv
+          .venv/bin/python -m pip install -r requirements.txt
+      - name: Unit tests
+        run: .venv/bin/python -m unittest discover -s tests -v
+      - name: Build source archives
+        run: python3 scripts/build_release.py
+      - name: Verify archive checksums
+        working-directory: dist
+        run: sha256sum -c SHA256SUMS
