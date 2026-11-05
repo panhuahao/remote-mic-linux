@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Map only evdev devices whose Bluetooth identity matches the selected remote."""
+from .i18n import msg, error_message
 import asyncio
 from collections import Counter
 from contextlib import suppress
@@ -11,7 +12,7 @@ def codes(names):
     for name in names:
         value = ecodes.ecodes.get(name)
         if not name.startswith("KEY_") or not isinstance(value, int) or value < 1 or value > ecodes.KEY_MAX:
-            raise ValueError("无效键名：" + str(name))
+            raise ValueError(msg("无效键名：{name}",name=str(name)))
         if value not in result:
             result.append(value)
     return result
@@ -93,7 +94,7 @@ class Keys:
             self.bindings[identity] = target
             self.press(target)
             label = ecodes.KEY.get(event.code, str(event.code))
-            self.report("按键：" + str(label))
+            self.report(msg("按键：{key}",key=str(label)))
         elif event.value == 0:
             self.release(self.bindings.pop(identity, []))
         elif event.value == 2:
@@ -105,13 +106,13 @@ class Keys:
     async def _read(self, device):
         try:
             device.grab()
-            self.report("按键通道已接入：" + device.name)
+            self.report(msg("按键通道已接入：{device}",device=device.name))
             async for event in device.async_read_loop():
                 if event.type == ecodes.EV_SYN and event.code == ecodes.SYN_DROPPED:
-                    raise OSError("遥控器按键缓冲溢出，正在重新同步")
+                    raise OSError(msg("遥控器按键缓冲溢出，正在重新同步"))
                 self.event(device.path, event)
         except OSError as exc:
-            self.report("按键通道断开或不可用：" + str(exc))
+            self.report(msg("按键通道断开或不可用：{error}",error=error_message(exc)))
         finally:
             self.gestures.cancel(device.path)
             for identity in list(self.bindings):

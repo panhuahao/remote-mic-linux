@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """User-facing action catalogue, independent of the GTK editor."""
+from .i18n import msg
+
 PRESETS = [
     ("屏蔽此按键", []), ("上", ["KEY_UP"]), ("下", ["KEY_DOWN"]),
     ("左", ["KEY_LEFT"]), ("右", ["KEY_RIGHT"]), ("确认 / Enter", ["KEY_ENTER"]),
@@ -27,7 +29,7 @@ ALIASES = {"KEY_BACK": ["KEY_ESC"], "KEY_HOMEPAGE": ["KEY_HOME"]}
 
 def label(action):
     if isinstance(action, dict):
-        return "打开应用：" + action.get("name", action.get("app", ""))
+        return msg("打开应用：{app}",app=action.get("name", action.get("app", "")))
     for name, keys in PRESETS:
         if keys == action:
             return name

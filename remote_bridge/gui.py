@@ -20,38 +20,50 @@ from .ui import Layout
 from .identity import APP_ID, APP_NAME, acquire_lock, prepare
 from .tray import Tray
 from .desktop import launch_context
+from .i18n import Translator, load_locale, save_locale, msg, message_key, error_message
 
 def caption(text):
     widget = Gtk.Label(label=text, xalign=0);widget.set_line_wrap(True);return widget
 
-def combo(items, value):
-    widget = Gtk.ComboBoxText()
-    for key, text in items:widget.append(key, text)
-    widget.set_active_id(value);return widget
-
 def page():
     widget = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12);widget.set_border_width(18);return widget
 
-def field(box, title, widget):
-    row = Gtk.Box(spacing=12);name = caption(title);name.set_size_request(140,-1)
-    row.pack_start(name, False, False, 0);row.pack_start(widget, True, True, 0);box.pack_start(row, False, False, 0)
-
 def voice_source(voice):
-    if voice['mode']=='local':return '本机离线 · SenseVoice'
-    if voice['mode']=='external':return '外部应用'
-    return '有道 · '+{'large':'大模型实时识别','short':'短语音识别','realtime_short':'实时短语音识别','realtime':'普通实时识别'}[voice['youdao_api']]
+    if voice['mode']=='local':return msg('本机离线 · SenseVoice')
+    if voice['mode']=='external':return msg('外部应用')
+    return msg('有道 · {service}',service=msg({'large':'大模型实时识别','short':'短语音识别','realtime_short':'实时短语音识别','realtime':'普通实时识别'}[voice['youdao_api']]))
 
 def voice_choice(voice):
     return (voice['mode'],voice.get('youdao_api') if voice['mode']=='youdao' else None,
             voice.get('youdao_model') if voice['mode']=='youdao' and voice.get('youdao_api')=='large' else None)
 
 class Window(Layout, Gtk.Window):
+    def caption(self, value):
+        return self.display(caption(''),value)
+
+    def combo(self, items, value):
+        return self.i18n.combo(Gtk.ComboBoxText(),items,value)
+
+    def field(self, box, title, widget):
+        row=Gtk.Box(spacing=12);name=self.caption(title);name.set_size_request(140,-1)
+        row.pack_start(name,False,False,0);row.pack_start(widget,True,True,0);box.pack_start(row,False,False,0)
+
+    def set_ui_language(self, locale):
+        save_locale(locale)
+        self.i18n.set_locale(locale)
+
+    def toggle_ui_language(self, *_):
+        try:self.set_ui_language('en' if self.i18n.locale=='zh_CN' else 'zh_CN')
+        except OSError as exc:self.log(msg('界面语言未保存：{error}',error=error_message(exc)))
+
     def __init__(self):
         super().__init__(title="Remote Mic Linux")
         self.set_default_size(1060, 800);self.set_border_width(18)
         self.messages = queue.Queue();self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self.loop.run_forever, daemon=True);self.thread.start()
         self.bridge = self.future = self.task = self.inserter = None
+        self.i18n=Translator(load_locale());self.log_history=[]
+        self.i18n.listeners.append(self.refresh_logs)
         self.settings = config.read();self.closing = False;self.generation = 0;self.capture_focus = {};self.input_epoch = 0
         self.capture_sources={};self.result_source=None;self.selected_voice_choice=None;self.pending_voice_selection=False
         self.focus = Focus();self.clipboard = GtkClipboard();self.restart_source = None;self.mapping_buttons = {}
@@ -64,7 +76,7 @@ class Window(Layout, Gtk.Window):
 
     def edit_action(self,key,kind,name):
         action=self.settings["mapping"].get(key,[key]) if kind=="single" else self.settings.get("gestures",{}).get(key,{}).get(kind)
-        dialog=ActionDialog(self,name+" · "+{"single":"单击","double":"双击","hold":"长按"}[kind],action,kind!="single")
+        dialog=ActionDialog(self,msg('{key} · {gesture}',key=msg(name),gesture=msg({'single':'单击','double':'双击','hold':'长按'}[kind])),action,kind!="single")
         while dialog.run()==Gtk.ResponseType.OK:
             try:
                 value=dialog.value()
@@ -73,42 +85,42 @@ class Window(Layout, Gtk.Window):
                     elif value is None:self.settings.setdefault("gestures",{}).setdefault(target,{}).pop(kind,None)
                     else:self.settings.setdefault("gestures",{}).setdefault(target,{})[kind]=value
                 self.refresh_mapping();break
-            except Exception as exc:dialog.info.set_text(str(exc))
+            except Exception as exc:dialog.i18n.bind(dialog.info,'set_text',error_message(exc))
         dialog.destroy()
 
     def build_voice(self):
-        voice=self.settings["voice"];box=page();scroll=Gtk.ScrolledWindow();scroll.add(box);self.notebook.append_page(scroll,Gtk.Label(label="语音设置"))
-        self.backend=combo([("local","本机离线 · SenseVoice"),("youdao","有道智云 · 在线识别"),("external","外部应用 · Vokie 等")],voice["mode"]);field(box,"识别方式",self.backend)
-        self.auto_insert=Gtk.CheckButton(label="识别后输入到原来的文本框（不按回车、不自动发送）");self.auto_insert.set_active(voice["auto_insert"]);box.pack_start(self.auto_insert,False,False,0)
-        self.paste_mode=combo([("normal","普通应用：Ctrl+V"),("terminal","终端：Ctrl+Shift+V")],"terminal" if "KEY_LEFTSHIFT" in voice["paste_shortcut"] else "normal");field(box,"输入快捷键",self.paste_mode)
+        voice=self.settings["voice"];box=page();scroll=Gtk.ScrolledWindow();scroll.add(box);self.notebook.append_page(scroll,self.caption("语音设置"))
+        self.backend=self.combo([("local","本机离线 · SenseVoice"),("youdao","有道智云 · 在线识别"),("external","外部应用 · Vokie 等")],voice["mode"]);self.field(box,"识别方式",self.backend)
+        self.auto_insert=self.translated(Gtk.CheckButton(),"识别后输入到原来的文本框（不按回车、不自动发送）");self.auto_insert.set_active(voice["auto_insert"]);box.pack_start(self.auto_insert,False,False,0)
+        self.paste_mode=self.combo([("normal","普通应用：Ctrl+V"),("terminal","终端：Ctrl+Shift+V")],"terminal" if "KEY_LEFTSHIFT" in voice["paste_shortcut"] else "normal");self.field(box,"输入快捷键",self.paste_mode)
         self.local_box=page();box.pack_start(self.local_box,False,False,0)
-        self.language=combo([("auto","自动检测"),("zh","普通话"),("en","英语"),("yue","粤语"),("ja","日语"),("ko","韩语")],voice["language"]);field(self.local_box,"本地识别语言",self.language)
-        self.model_path=Gtk.Entry();self.model_path.set_text(voice["model_dir"]);field(self.local_box,"模型目录",self.model_path)
-        self.model_status=caption("");self.local_box.pack_start(self.model_status,False,False,0)
-        self.local_box.pack_start(caption("离线模式不上传语音；首次使用需安装模型。单段最长 60 秒。"),False,False,0)
+        self.language=self.combo([("auto","自动检测"),("zh","普通话"),("en","英语"),("yue","粤语"),("ja","日语"),("ko","韩语")],voice["language"]);self.field(self.local_box,"本地识别语言",self.language)
+        self.model_path=Gtk.Entry();self.model_path.set_text(voice["model_dir"]);self.field(self.local_box,"模型目录",self.model_path)
+        self.model_status=self.caption("");self.local_box.pack_start(self.model_status,False,False,0)
+        self.local_box.pack_start(self.caption("离线模式不上传语音；首次使用需安装模型。单段最长 60 秒。"),False,False,0)
         self.cloud_box=page();box.pack_start(self.cloud_box,False,False,0)
-        self.cloud_api=combo([("large","大模型实时识别（推荐）"),("short","短语音识别：松开后上传"),("realtime_short","实时短语音识别"),("realtime","普通实时语音识别")],voice["youdao_api"]);field(self.cloud_box,"有道服务",self.cloud_api)
-        self.cloud_model=combo([("multi-lang-stream-fast-v1","快速模型 · 低延迟"),("multi-lang-stream-v1","标准模型 · 优先断句与准确率")],voice["youdao_model"]);field(self.cloud_box,"大模型选项",self.cloud_model)
+        self.cloud_api=self.combo([("large","大模型实时识别（推荐）"),("short","短语音识别：松开后上传"),("realtime_short","实时短语音识别"),("realtime","普通实时语音识别")],voice["youdao_api"]);self.field(self.cloud_box,"有道服务",self.cloud_api)
+        self.cloud_model=self.combo([("multi-lang-stream-fast-v1","快速模型 · 低延迟"),("multi-lang-stream-v1","标准模型 · 优先断句与准确率")],voice["youdao_model"]);self.field(self.cloud_box,"大模型选项",self.cloud_model)
         self.cloud_language=Gtk.ComboBoxText.new_with_entry()
         for lang in ("zh-CHS","auto","en","ja","yue","zh-CHS2","en-class"):self.cloud_language.append_text(lang)
-        self.cloud_language.get_child().set_text(voice["youdao_language"]);field(self.cloud_box,"语言代码",self.cloud_language)
-        self.cloud_box.pack_start(caption("大模型支持 auto / zh-CHS / en；实时短语音支持 zh-CHS / en。普通实时请依其文档选择语言代码。"),False,False,0)
+        self.cloud_language.get_child().set_text(voice["youdao_language"]);self.field(self.cloud_box,"语言代码",self.cloud_language)
+        self.cloud_box.pack_start(self.caption("大模型支持 auto / zh-CHS / en；实时短语音支持 zh-CHS / en。普通实时请依其文档选择语言代码。"),False,False,0)
         secret=credentials.read();self.app_id=Gtk.Entry();self.app_id.set_text(secret["app_id"])
         self.app_secret=Gtk.Entry();self.app_secret.set_visibility(False);self.app_secret.set_input_purpose(Gtk.InputPurpose.PASSWORD);self.app_secret.set_text(secret["secret"])
-        field(self.cloud_box,"应用 ID",self.app_id);field(self.cloud_box,"应用密钥",self.app_secret)
-        self.cloud_box.pack_start(caption("保存时凭据写入本机独立 0600 文件，仅当前系统用户可读，未加密。不要在聊天中发送密钥。"),False,False,0)
-        self.cloud_box.pack_start(caption("选择有道后，按语音键会通过加密连接上传音频，并消耗有道额度；需要应用开通所选服务。不会自动切换或重复请求其他收费服务。"),False,False,0)
+        self.field(self.cloud_box,"应用 ID",self.app_id);self.field(self.cloud_box,"应用密钥",self.app_secret)
+        self.cloud_box.pack_start(self.caption("保存时凭据写入本机独立 0600 文件，仅当前系统用户可读，未加密。不要在聊天中发送密钥。"),False,False,0)
+        self.cloud_box.pack_start(self.caption("选择有道后，按语音键会通过加密连接上传音频，并消耗有道额度；需要应用开通所选服务。不会自动切换或重复请求其他收费服务。"),False,False,0)
         self.external_box=page();box.pack_start(self.external_box,False,False,0)
-        self.shortcut=Gtk.Entry();self.shortcut.set_placeholder_text("KEY_LEFTCTRL+KEY_LEFTALT+KEY_SPACE");self.shortcut.set_text("+".join(self.settings.get("voice_shortcut",[])));field(self.external_box,"外部触发键",self.shortcut)
-        self.mode=combo([("hold","按住期间保持快捷键"),("toggle","开始 / 结束各点击一次")],self.settings.get("voice_shortcut_mode","hold"));field(self.external_box,"触发方式",self.mode)
-        self.external_box.pack_start(caption("外部应用选择 Ubuntu Remote Microphone；Vokie 已验证启动，登录及识别尚未验证。"),False,False,0)
+        self.shortcut=Gtk.Entry();self.shortcut.set_placeholder_text("KEY_LEFTCTRL+KEY_LEFTALT+KEY_SPACE");self.shortcut.set_text("+".join(self.settings.get("voice_shortcut",[])));self.field(self.external_box,"外部触发键",self.shortcut)
+        self.mode=self.combo([("hold","按住期间保持快捷键"),("toggle","开始 / 结束各点击一次")],self.settings.get("voice_shortcut_mode","hold"));self.field(self.external_box,"触发方式",self.mode)
+        self.external_box.pack_start(self.caption("外部应用选择 Ubuntu Remote Microphone；Vokie 已验证启动，登录及识别尚未验证。"),False,False,0)
         self.backend.connect("changed",self.backend_changed);self.cloud_api.connect("changed",self.backend_changed);self.cloud_model.connect("changed",self.backend_changed);GLib.idle_add(self.backend_changed)
 
     def backend_changed(self,*_):
         mode=self.backend.get_active_id();self.local_box.set_visible(mode=="local");self.cloud_box.set_visible(mode=="youdao");self.external_box.set_visible(mode=="external")
         self.cloud_model.set_sensitive(self.cloud_api.get_active_id()=="large")
         directory=Path(self.model_path.get_text()).expanduser();ready=all((directory/f).is_file() for f in ("model.int8.onnx","tokens.txt"))
-        self.model_status.set_text("模型文件已安装" if ready else "模型文件尚未就绪")
+        self.display(self.model_status,"模型文件已安装" if ready else "模型文件尚未就绪")
         selection={'mode':mode,'youdao_api':self.cloud_api.get_active_id(),'youdao_model':self.cloud_model.get_active_id()}
         selected=voice_choice(selection);pending=selected!=voice_choice(self.settings['voice'])
         changed=selected!=self.selected_voice_choice;was_pending=self.pending_voice_selection
@@ -116,21 +128,29 @@ class Window(Layout, Gtk.Window):
         if pending and (changed or not was_pending):
             # A switch to local must not leave the previous cloud recognizer running.
             self.on_stop()
-            self.voice.set_text('识别方式已更改 · 等待应用')
-            self.source_status.set_text('已选择：'+voice_source(selection)+'（尚未应用）')
-            self.asr_status.set_text('原识别已停止，请点击“保存并连接”启用新方式。')
-            self.input_status.set_text('新识别方式尚未应用，本次不会自动输入。')
-            if self.result_source:self.result_heading.set_text('上一段结果 · '+self.result_source)
+            self.display(self.voice,'识别方式已更改 · 等待应用')
+            self.display(self.source_status,msg('已选择：{source}（尚未应用）',source=voice_source(selection)))
+            self.display(self.asr_status,'原识别已停止，请点击“保存并连接”启用新方式。')
+            self.display(self.input_status,'新识别方式尚未应用，本次不会自动输入。')
+            if self.result_source:self.display(self.result_heading,msg('上一段结果 · {source}',source=self.result_source))
         elif was_pending and not pending:
-            self.source_status.set_text('已选择：'+voice_source(selection))
-            self.asr_status.set_text('请保存并连接以启动识别。')
+            self.display(self.source_status,msg('已选择：{source}',source=voice_source(selection)))
+            self.display(self.asr_status,'请保存并连接以启动识别。')
         return False
 
     def emit(self,kind,data):self.messages.put((self.generation,kind,data))
 
     def log(self,message):
-        buffer=self.logs.get_buffer();buffer.insert(buffer.get_end_iter(),datetime.now().strftime("%H:%M:%S ")+str(message)+"\n")
-        if buffer.get_line_count()>300:buffer.delete(buffer.get_start_iter(),buffer.get_iter_at_line(100))
+        self.log_history.append((datetime.now().strftime("%H:%M:%S "),message))
+        self.log_history=self.log_history[-300:]
+        self.refresh_logs()
+
+    def refresh_logs(self):
+        if hasattr(self,'logs'):
+            self.logs.get_buffer().set_text(''.join(stamp+self.i18n.text(message)+'\n' for stamp,message in self.log_history))
+
+    def clear_logs(self,*_):
+        self.log_history.clear();self.refresh_logs()
 
     def poll(self):
         for _ in range(250):
@@ -140,11 +160,11 @@ class Window(Layout, Gtk.Window):
             if kind=="status":self.set_connection_status(data)
             elif kind=="log":self.log(data)
             elif kind=="asr_status":
-                self.asr_status.set_text(data)
-                if str(data).startswith('有道识别失败'):
-                    self.result_heading.set_text('未完成的预览 · '+(self.result_source or voice_source(self.settings['voice'])))
-                    self.input_status.set_text('本次识别未最终确认，未自动输入；可手动复制预览或重新说话。')
-            elif kind=="input_status":self.input_status.set_text(data)
+                self.display(self.asr_status,data)
+                if message_key(data)=='有道识别失败：{error}' or message_key(data).startswith('有道识别失败：'):
+                    self.display(self.result_heading,msg('未完成的预览 · {source}',source=self.result_source or voice_source(self.settings['voice'])))
+                    self.display(self.input_status,'本次识别未最终确认，未自动输入；可手动复制预览或重新说话。')
+            elif kind=="input_status":self.display(self.input_status,data)
             elif kind=="devices":
                 self.devices.remove_all()
                 for device in data:self.devices.append(device["address"],device["name"]+" · "+device["address"][-5:])
@@ -153,16 +173,16 @@ class Window(Layout, Gtk.Window):
             elif kind=="address":self.address.set_text(data)
             elif kind=="level":self.level.set_value(data)
             elif kind=="voice":
-                self.voice.set_text("正在接收语音… 松开结束" if data else "待机 · 按住语音键说话")
+                self.display(self.voice,"正在接收语音… 松开结束" if data else "待机 · 按住语音键说话")
                 self.tray.update(recording=bool(data))
                 if not data:self.level.set_value(0)
             elif kind=="capture" and data["active"]:
                 self.result.get_buffer().set_text('')
                 self.result_source=voice_source(self.settings['voice'])
                 self.capture_sources[data['id']]=self.result_source
-                self.source_status.set_text('当前识别方式：'+self.result_source)
-                self.result_heading.set_text('实时预览 · '+self.result_source)
-                self.input_status.set_text('正在录音；请保持目标输入框的焦点。')
+                self.display(self.source_status,msg('当前识别方式：{source}',source=self.result_source))
+                self.display(self.result_heading,msg('实时预览 · {source}',source=self.result_source))
+                self.display(self.input_status,'正在录音；请保持目标输入框的焦点。')
                 self.capture_focus[data["id"]]=self.focus.snapshot()
                 if len(self.capture_focus)>8:
                     oldest=next(iter(self.capture_focus));self.capture_focus.pop(oldest);self.capture_sources.pop(oldest,None)
@@ -170,16 +190,16 @@ class Window(Layout, Gtk.Window):
             elif kind=="partial":self.result.get_buffer().set_text(data)
             elif kind=="transcript":
                 self.result_source=self.capture_sources.pop(data['id'],voice_source(self.settings['voice']))
-                self.result_heading.set_text('最终识别结果 · '+self.result_source)
+                self.display(self.result_heading,msg('最终识别结果 · {source}',source=self.result_source))
                 self.result.get_buffer().set_text(data["text"]);token=self.capture_focus.pop(data["id"],None)
                 if data["text"] and self.settings["voice"]["auto_insert"]:self.insert(data["text"],token,gen)
-                self.log("识别完成：音频 %.1f 秒，处理 %.1f 秒"%(data["audio_seconds"],data["elapsed"]))
+                self.log(msg("识别完成：音频 {audio:.1f} 秒，处理 {elapsed:.1f} 秒",audio=data["audio_seconds"],elapsed=data["elapsed"]))
             elif kind=="launch":
                 try:
                     app=Gio.DesktopAppInfo.new(data)
                     if app:app.launch([],launch_context())
-                    else:self.log("未找到应用："+data)
-                except Exception as exc:self.log("启动应用失败："+str(exc))
+                    else:self.log(msg("未找到应用：{app}",app=data))
+                except Exception as exc:self.log(msg("启动应用失败：{error}",error=error_message(exc)))
             elif kind=="key":
                 for key,button in self.remote_buttons.items():
                     if data in [key]+ALIASES.get(key,[]):
@@ -195,17 +215,17 @@ class Window(Layout, Gtk.Window):
         return True
 
     def insert(self,text,token,generation):
-        if not self.focus.valid(token):self.input_status.set_text("目标窗口或输入框已变化；结果已保留。请先点入目标输入框再说话。");return
+        if not self.focus.valid(token):self.display(self.input_status,"目标窗口或输入框已变化；结果已保留。请先点入目标输入框再说话。");return
         epoch=self.input_epoch
         valid=lambda:not self.closing and generation==self.generation and epoch==self.input_epoch and self.focus.valid(token)
         try:
             if self.inserter is None:self.inserter=TextInserter(self.clipboard)
-        except Exception as exc:self.input_status.set_text("输入设备不可用："+str(exc));return
+        except Exception as exc:self.display(self.input_status,msg("输入设备不可用：{error}",error=error_message(exc)));return
         keys=copy.deepcopy(self.settings["voice"]["paste_shortcut"])
         def work():
             try:
-                success=self.inserter.insert(text,keys,valid);message="已发送粘贴快捷键（未按回车）" if success else "目标焦点变化，已取消输入"
-            except Exception as exc:message="输入失败："+str(exc)
+                success=self.inserter.insert(text,keys,valid);message=msg("已发送粘贴快捷键（未按回车）" if success else "目标焦点变化，已取消输入")
+            except Exception as exc:message=msg("输入失败：{error}",error=error_message(exc))
             self.messages.put((generation,"input_status",message))
         threading.Thread(target=work,daemon=True).start()
 
@@ -213,12 +233,12 @@ class Window(Layout, Gtk.Window):
         b=self.result.get_buffer();return b.get_text(*b.get_bounds(),True)
 
     def copy_result(self,*_):
-        Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).set_text(self.result_text(),-1);self.input_status.set_text("结果已复制")
+        Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).set_text(self.result_text(),-1);self.display(self.input_status,"结果已复制")
 
     def delayed_insert(self,*_):
         text=self.result_text();gen=self.generation
         if not text:return
-        self.input_status.set_text("请在 3 秒内切换到目标文本框…")
+        self.display(self.input_status,"请在 3 秒内切换到目标文本框…")
         def later():
             if gen==self.generation and not self.closing:self.insert(text,self.focus.snapshot(),gen)
             return False
@@ -232,7 +252,7 @@ class Window(Layout, Gtk.Window):
         self.scan_button.set_sensitive(False)
         async def scanning():
             try:self.emit("devices",await scan())
-            except Exception as exc:self.emit("log",str(exc));self.emit("devices",[])
+            except Exception as exc:self.emit("log",error_message(exc));self.emit("devices",[])
         asyncio.run_coroutine_threadsafe(scanning(),self.loop)
 
     def collect(self):
@@ -244,28 +264,28 @@ class Window(Layout, Gtk.Window):
     def on_start(self,_=None):
         if self.closing:return
         try:settings=self.collect()
-        except Exception as exc:self.log("配置未保存："+str(exc));self.set_connection_status("配置有误，请查看日志");return
+        except Exception as exc:self.log(msg("配置未保存：{error}",error=error_message(exc)));self.set_connection_status("配置有误，请查看日志");return
         self.on_stop()
         def start_when_ready():
             if self.closing:return False
             if self.future and not self.future.done():return True
             self.restart_source=None;generation=self.generation;notify=lambda kind,value:self.messages.put((generation,kind,value))
-            self.source_status.set_text('当前识别方式：'+voice_source(settings['voice']))
-            self.asr_status.set_text('正在准备识别…')
+            self.display(self.source_status,msg('当前识别方式：{source}',source=voice_source(settings['voice'])))
+            self.display(self.asr_status,'正在准备识别…')
             async def run():
                 self.task=asyncio.current_task();self.bridge=Bridge(settings,notify)
                 try:await self.bridge.run()
                 except asyncio.CancelledError:pass
-                except Exception as exc:notify("log",str(exc));notify("status","启动失败，请查看日志")
+                except Exception as exc:notify("log",error_message(exc));notify("status","启动失败，请查看日志")
                 finally:self.task=None
             self.future=asyncio.run_coroutine_threadsafe(run(),self.loop);return False
         self.restart_source=GLib.timeout_add(100,start_when_ready);self.backend_changed()
 
     def on_stop(self,_=None):
         if self.restart_source:GLib.source_remove(self.restart_source);self.restart_source=None
-        self.generation+=1;self.capture_focus.clear();self.capture_sources.clear();self.set_connection_status("已停止 / 正在释放连接");self.asr_status.set_text("识别已停止")
-        self.source_status.set_text('识别已停止')
-        if self.result_source:self.result_heading.set_text('上一段结果 · '+self.result_source)
+        self.generation+=1;self.capture_focus.clear();self.capture_sources.clear();self.set_connection_status("已停止 / 正在释放连接");self.display(self.asr_status,"识别已停止")
+        self.display(self.source_status,'识别已停止')
+        if self.result_source:self.display(self.result_heading,msg('上一段结果 · {source}',source=self.result_source))
         def stop():
             if self.bridge:self.bridge.stop_event.set()
             if self.task:self.task.cancel()

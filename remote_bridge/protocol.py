@@ -3,6 +3,7 @@
 # XiaomiBluetoothBridge.swift, commit 96b9df005707c1268e47316e1ba46aed0ef42c63.
 # Copyright (C) 2026 SayAll contributors; Ubuntu adaptation contributors.
 """ATVV 16 kHz protocol and high-nibble-first IMA ADPCM decoder."""
+from .i18n import msg
 from dataclasses import dataclass
 import struct
 
@@ -24,7 +25,7 @@ class Capabilities:
     @classmethod
     def parse(cls, data):
         if len(data) < 7 or data[0] != 0x0b:
-            raise ValueError("无效 ATVV 能力响应")
+            raise ValueError(msg("无效 ATVV 能力响应"))
         version = int.from_bytes(data[1:3], "big")
         if version >= 0x100:
             codecs, interaction = data[3:5]
@@ -32,13 +33,13 @@ class Capabilities:
                 codecs, interaction = data[4], 3
         else:
             if len(data) < 9:
-                raise ValueError("旧版 ATVV 能力响应不完整")
+                raise ValueError(msg("旧版 ATVV 能力响应不完整"))
             codecs, interaction = data[4], 0
         if not codecs & 2:
-            raise ValueError("此版本仅支持遥控器的 16 kHz 编码")
+            raise ValueError(msg("此版本仅支持遥控器的 16 kHz 编码"))
         size = int.from_bytes(data[5:7], "big") or 120
         if size > 4096:
-            raise ValueError("ATVV 帧长异常")
+            raise ValueError(msg("ATVV 帧长异常"))
         return cls(version, codecs, interaction, size)
 
     def mic_open(self):
@@ -114,7 +115,7 @@ class VoiceProtocol:
         elif opcode == 4:
             if len(data) >= 3 and data[2] != 2:
                 self.stop()
-                raise ValueError("遥控器切换到了不支持的音频编码")
+                raise ValueError(msg("遥控器切换到了不支持的音频编码"))
             self.session_id = data[3] if len(data) >= 4 else 0
             self.start()
         elif opcode == 0:

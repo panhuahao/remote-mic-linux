@@ -2,16 +2,17 @@
 """Launch host applications without leaking the AppImage Python/GTK runtime."""
 import os
 from gi.repository import Gio, Gdk
+from .runtime_environment import host_environment
 
 def launch_context():
     context=Gdk.Display.get_default().get_app_launch_context()
-    if os.environ.get('REMOTE_MIC_BUNDLE')=='1':
-        for name in ('PYTHONHOME','PYTHONPATH','PYTHONNOUSERSITE','PYTHONDONTWRITEBYTECODE',
-                     'LD_LIBRARY_PATH','GI_TYPELIB_PATH','GDK_PIXBUF_MODULE_FILE','GDK_BACKEND',
-                     'APPDIR','APPIMAGE','OWD','REMOTE_MIC_BUNDLE'):
-            context.unsetenv(name)
-        context.setenv('PATH',os.environ['REMOTE_MIC_HOST_PATH'])
-        context.unsetenv('REMOTE_MIC_HOST_PATH')
+    original=dict(os.environ)
+    environment=host_environment(original)
+    for name in original.keys()-environment.keys():
+        context.unsetenv(name)
+    for name,value in environment.items():
+        if original.get(name)!=value:
+            context.setenv(name,value)
     return context
 
 def open_uri(uri):

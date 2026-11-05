@@ -6,30 +6,37 @@ from gi.repository import Gtk, Gdk, Gio
 from evdev import ecodes
 from .actions import PRESETS
 from .config import validate_action
+from .i18n import Translator, msg
 
 class ActionDialog(Gtk.Dialog):
     def __init__(self, parent, title, action, optional=False):
-        super().__init__(title=title, transient_for=parent, modal=True)
+        super().__init__(transient_for=parent, modal=True)
+        self.i18n=Translator(parent.i18n.locale)
+        self.i18n.bind(self,'set_title',title)
+        self.locale_changed=lambda:self.i18n.set_locale(parent.i18n.locale)
+        parent.i18n.listeners.append(self.locale_changed)
+        self.connect('destroy',lambda *_:parent.i18n.listeners.remove(self.locale_changed))
         self.get_style_context().add_class('bridge-app')
-        self.add_buttons("取消", Gtk.ResponseType.CANCEL, "应用", Gtk.ResponseType.OK)
+        self.add_buttons(self.i18n.text('取消'), Gtk.ResponseType.CANCEL, self.i18n.text('应用'), Gtk.ResponseType.OK)
+        self.i18n.label(self.get_widget_for_response(Gtk.ResponseType.CANCEL),'取消')
+        self.i18n.label(self.get_widget_for_response(Gtk.ResponseType.OK),'应用')
         self.get_widget_for_response(Gtk.ResponseType.OK).get_style_context().add_class('primary')
         self.set_default_size(520, 240)
         box = self.get_content_area(); box.set_spacing(12); box.set_border_width(18)
         self.choice = Gtk.ComboBoxText()
-        if optional:self.choice.append("none", "不设置此手势")
-        for index, (name, keys) in enumerate(PRESETS):self.choice.append(str(index), name)
-        self.choice.append("custom", "自定义快捷键"); self.choice.append("app", "打开已安装的应用")
+        options=([('none','不设置此手势')] if optional else [])+[(str(index),name) for index,(name,keys) in enumerate(PRESETS)]+[('custom','自定义快捷键'),('app','打开已安装的应用')]
+        self.i18n.combo(self.choice,options,None)
         box.pack_start(self.choice, False, False, 0)
-        self.entry = Gtk.Entry();self.entry.set_placeholder_text("例如 Ctrl+Alt+Space 或 KEY_LEFTCTRL+KEY_V")
+        self.entry = Gtk.Entry();self.i18n.bind(self.entry,"set_placeholder_text","例如 Ctrl+Alt+Space 或 KEY_LEFTCTRL+KEY_V")
         box.pack_start(self.entry, False, False, 0)
-        self.record = Gtk.ToggleButton(label="录制快捷键");self.record.connect("toggled", self.recording)
+        self.record = self.i18n.label(Gtk.ToggleButton(),"录制快捷键");self.record.connect("toggled", self.recording)
         box.pack_start(self.record, False, False, 0)
         self.app = Gtk.ComboBoxText()
         self.apps = {a.get_id():a for a in Gio.AppInfo.get_all() if a.should_show() and a.get_id()}
         for key, app in sorted(self.apps.items(), key=lambda x: x[1].get_display_name().casefold()):
             self.app.append(key, app.get_display_name())
         box.pack_start(self.app, False, False, 0)
-        self.info = Gtk.Label(label="快捷键只执行一次；组合键会自动释放。", xalign=0)
+        self.info = self.i18n.label(Gtk.Label(xalign=0),"快捷键只执行一次；组合键会自动释放。")
         self.info.set_line_wrap(True); box.pack_start(self.info, False, False, 0)
         self.choice.connect("changed", self.changed); self.connect("key-press-event", self.key_event)
         selected = "custom"
@@ -49,7 +56,7 @@ class ActionDialog(Gtk.Dialog):
         self.app.set_visible(self.choice.get_active_id() == "app")
 
     def recording(self, *_):
-        self.record.set_label("请按下所需组合键…" if self.record.get_active() else "录制快捷键")
+        self.i18n.label(self.record,"请按下所需组合键…" if self.record.get_active() else "录制快捷键")
 
     def key_event(self, _, event):
         if not self.record.get_active():return False
@@ -66,7 +73,7 @@ class ActionDialog(Gtk.Dialog):
         if choice == "none":return None
         if choice == "app":
             app = self.apps.get(self.app.get_active_id())
-            if not app:raise ValueError("请选择已安装的应用")
+            if not app:raise ValueError(msg("请选择已安装的应用"))
             result = {"app": app.get_id(), "name": app.get_display_name()}
         elif choice == "custom":
             aliases = {"CTRL":"KEY_LEFTCTRL", "ALT":"KEY_LEFTALT", "SHIFT":"KEY_LEFTSHIFT", "SUPER":"KEY_LEFTMETA", "WIN":"KEY_LEFTMETA", "ESC":"KEY_ESC"}

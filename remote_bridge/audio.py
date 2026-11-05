@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """PipeWire virtual source; no recording files, uploads, or default changes."""
+from .i18n import msg, error_message
+from .runtime_environment import host_environment
 import json
 import os
 import select
+import shutil
 import subprocess
 import threading
 import time
@@ -23,6 +26,12 @@ class VirtualMicrophone:
         self.peak = 0
 
     def start(self):
+        # Use the host PipeWire client with its matching plugins/configuration.
+        # Bundled GTK/Python libraries must not affect this system executable.
+        environment = host_environment()
+        executable = shutil.which("pw-cat", path=environment.get("PATH", os.defpath))
+        if executable is None:
+            raise FileNotFoundError("pw-cat was not found in the host PATH; install pipewire-bin")
         properties = {
             "media.class": "Audio/Source", "node.name": self.NAME,
             "node.description": "Ubuntu Remote Microphone",
@@ -30,18 +39,19 @@ class VirtualMicrophone:
             "node.always-process": True, "priority.session": 0,
         }
         self.process = subprocess.Popen([
-            "pw-cat", "--playback", "--raw", "--format", "s16",
+            executable, "--playback", "--raw", "--format", "s16",
             "--rate", str(self.RATE), "--channels", "1",
             "--channel-map", "MONO", "--target", "0",
             "--latency", "20ms", "--properties", json.dumps(properties), "-",
-        ], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        ], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+           env=environment)
         os.set_blocking(self.process.stdin.fileno(), False)
         self.worker = threading.Thread(target=self._run, daemon=True)
         self.worker.start()
         time.sleep(.15)
         if self.process.poll() is not None:
             self.close()
-            raise RuntimeError("无法启动 PipeWire 虚拟麦克风；请检查用户音频服务")
+            raise RuntimeError(msg("无法启动 PipeWire 虚拟麦克风；请检查用户音频服务"))
 
     def push(self, data):
         with self.lock:
@@ -62,7 +72,7 @@ class VirtualMicrophone:
         try:
             while not self.stopped.is_set():
                 if self.process.poll() is not None:
-                    raise RuntimeError("虚拟麦克风进程已退出")
+                    raise RuntimeError(msg("虚拟麦克风进程已退出"))
                 if not pending:
                     with self.lock:
                         pending = bytes(self.buffer[:self.FRAME_BYTES])
@@ -79,7 +89,7 @@ class VirtualMicrophone:
                         self.stopped.wait(max(0, next_at - now))
         except (OSError, RuntimeError) as exc:
             if not self.stopped.is_set():
-                self.report(str(exc))
+                self.report(error_message(exc))
 
     def close(self):
         self.stopped.set()

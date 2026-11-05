@@ -4,6 +4,7 @@ import gi
 from gi.repository import Gtk, GLib
 from .config import ROOT
 from .identity import APP_ID, APP_NAME
+from .i18n import msg
 
 class Tray:
     def __init__(self, window):
@@ -22,7 +23,7 @@ class Tray:
         self.indicator = Indicator.Indicator.new(APP_ID, str(ROOT/'assets/remote-mic-linux-symbolic.svg'), Indicator.IndicatorCategory.APPLICATION_STATUS)
         self.indicator.set_title(APP_NAME)
         self.menu = Gtk.Menu()
-        self.status_item = Gtk.MenuItem(label='尚未连接')
+        self.status_item = window.translated(Gtk.MenuItem(),'尚未连接')
         self.status_item.set_sensitive(False)
         self.menu.append(self.status_item)
         self.menu.append(Gtk.SeparatorMenuItem())
@@ -35,9 +36,10 @@ class Tray:
         self.indicator.set_menu(self.menu)
         self.indicator.set_status(Indicator.IndicatorStatus.ACTIVE)
         self.indicator.connect('connection-changed', self.connection_changed)
+        window.i18n.listeners.append(self.update)
 
     def add(self, label, callback):
-        item = Gtk.MenuItem(label=label)
+        item = self.window.translated(Gtk.MenuItem(),label)
         item.connect('activate', lambda *_: callback())
         self.menu.append(item)
 
@@ -56,9 +58,9 @@ class Tray:
         if recording is not None:self.recording = recording
         if self.indicator is None:return
         description = '正在接收语音 · 松开结束' if self.recording else self.state
-        self.status_item.set_label(description)
+        self.window.translated(self.status_item,description)
         asset = 'remote-mic-recording-symbolic.svg' if self.recording else 'remote-mic-linux-symbolic.svg'
-        self.indicator.set_icon_full(str(ROOT/'assets'/asset), APP_NAME+' · '+description)
+        self.indicator.set_icon_full(str(ROOT/'assets'/asset), APP_NAME+' · '+self.window.i18n.text(description))
 
     def close(self):
         if self.indicator:

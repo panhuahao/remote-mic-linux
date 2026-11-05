@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+from .i18n import msg, error_message
 import asyncio
 from contextlib import suppress
 import struct
@@ -86,17 +87,17 @@ class Bridge:
         self.notify("status", "连接遥控器并协商语音…")
         device = await resolve_device(address)
         if device is None:
-            raise RuntimeError("未发现遥控器广播；请靠近电脑并按键唤醒，首次使用需进入配对模式")
+            raise RuntimeError(msg("未发现遥控器广播；请靠近电脑并按键唤醒，首次使用需进入配对模式"))
         client = BleakClient(device, disconnected_callback=lambda _: disconnected.set(), timeout=25, pair=True)
         try:
             await asyncio.wait_for(client.connect(), 30)
             for uuid in (TX, AUDIO, CONTROL):
                 if client.services.get_characteristic(uuid) is None:
-                    raise RuntimeError("未发现 ATVV 语音通道；请完成系统蓝牙配对后重连")
+                    raise RuntimeError(msg("未发现 ATVV 语音通道；请完成系统蓝牙配对后重连"))
             model_char = client.services.get_characteristic("00002a24-0000-1000-8000-00805f9b34fb")
             if model_char:
                 model = bytes(await client.read_gatt_char(model_char)).decode(errors="replace").strip("\0")
-                self.report("遥控器型号：" + model)
+                self.report(msg("遥控器型号：{model}",model=model))
             capabilities_ready = asyncio.Event()
 
             def control(_, data):
@@ -123,7 +124,7 @@ class Bridge:
             await asyncio.wait_for(capabilities_ready.wait(), 8)
             if protocol_error:
                 raise protocol_error[0]
-            self.report("ATVV 已就绪：16 kHz / 单声道 / 帧长 %d" % voice.caps.frame_size)
+            self.report(msg("ATVV 已就绪：16 kHz / 单声道 / 帧长 {size}",size=voice.caps.frame_size))
             if self.config.get("mapping_enabled", True):
                 try:
                     key_config = dict(self.config)
@@ -132,7 +133,7 @@ class Bridge:
                     self.keys = Keys(key_config, self.report, notify=self.notify)
                     keys_task = asyncio.create_task(self.keys.monitor(address))
                 except (OSError, PermissionError) as exc:
-                    self.report("按键映射不可用：" + str(exc))
+                    self.report(msg("按键映射不可用：{error}",error=error_message(exc)))
             self.notify("status", "已连接；按住语音键说话")
             self.notify("address", address)
             while not self.stop_event.is_set() and not disconnected.is_set():
@@ -193,7 +194,7 @@ class Bridge:
                 except asyncio.CancelledError:
                     raise
                 except Exception as exc:
-                    self.report("连接未成功：%s: %s" % (type(exc).__name__, exc))
+                    self.report(msg("连接未成功：{kind}: {error}",kind=type(exc).__name__,error=error_message(exc)))
                     self.notify("status", "等待遥控器；3 秒后重试")
                 await self.pause(3)
         finally:

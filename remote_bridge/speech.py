@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Bounded local dictation; PCM stays in memory and is never uploaded."""
+from .i18n import msg, error_message
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -28,7 +29,7 @@ class Speech:
         import sherpa_onnx
         directory = Path(self.settings["model_dir"]).expanduser()
         if not (directory/"model.int8.onnx").is_file() or not (directory/"tokens.txt").is_file():
-            raise RuntimeError("缺少本地语音模型，请在语音设置中安装模型")
+            raise RuntimeError(msg("缺少本地语音模型，请在语音设置中安装模型"))
         return sherpa_onnx.OfflineRecognizer.from_sense_voice(
             model=str(directory/"model.int8.onnx"), tokens=str(directory/"tokens.txt"),
             num_threads=2, language=self.settings.get("language", "auto"),
@@ -50,7 +51,7 @@ class Speech:
                 try:
                     text = await loop.run_in_executor(self.executor, self._decode, data)
                 except Exception as exc:
-                    self.notify("asr_status", "本次识别失败：" + str(exc))
+                    self.notify("asr_status", msg("本次识别失败：{error}",error=error_message(exc)))
                     continue
                 if not self.closed and epoch == self.epoch:
                     result = {"id": identifier, "text": text, "audio_seconds": len(data)/32000,
@@ -61,7 +62,7 @@ class Speech:
             pass
         except Exception as exc:
             self.ready = False
-            self.notify("asr_status", "识别不可用：" + str(exc))
+            self.notify("asr_status", msg("识别不可用：{error}",error=error_message(exc)))
         finally:
             self.ready = False
 

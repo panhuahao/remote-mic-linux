@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Youdao public ASR APIs. Cloud mode is always explicitly selected by the user."""
+from .i18n import msg, error_message
 import asyncio
 import base64
 import hashlib
@@ -30,7 +31,7 @@ END_MESSAGE = b'{"end": "true"}'
 def checked(message):
     code = str(message.get("errorCode", "0"))
     if code != "0" or message.get("action") == "error":
-        raise RuntimeError("有道错误 " + code + "：" + ERRORS.get(code, "请在有道控制台检查服务权限和请求状态"))
+        raise RuntimeError(msg("有道错误 {code}：{error}",code=code,error=msg(ERRORS.get(code,"请在有道控制台检查服务权限和请求状态"))))
     return message
 
 def params(settings, cred, salt=None, now=None):
@@ -45,7 +46,7 @@ def params(settings, cred, salt=None, now=None):
                      partialAsrRequired="true", vadEos="0")
     else:
         if value["langType"] == "auto":
-            raise ValueError("普通有道接口需指定语言，例如 zh-CHS 或 en")
+            raise ValueError(msg("普通有道接口需指定语言，例如 zh-CHS 或 en"))
         value.update(signType="v4", format="wav", channel="1", version="v1", rate="16000")
     return value
 
@@ -109,7 +110,7 @@ def short_request(data, settings, cred):
               "langType":settings.get("youdao_language","zh-CHS"),
               "format":"wav","rate":"16000","channel":"1","type":"1"}
     if fields["langType"] == "auto":
-        raise ValueError("短语音接口需指定语言，例如 zh-CHS 或 en")
+        raise ValueError(msg("短语音接口需指定语言，例如 zh-CHS 或 en"))
     req = urllib.request.Request("https://openapi.youdao.com/asrapi",
                                  data=urllib.parse.urlencode(fields).encode(), method="POST")
     with urllib.request.build_opener(NoRedirect).open(req, timeout=30) as response:
@@ -213,8 +214,8 @@ class YoudaoSpeech:
         except Exception as exc:
             if not self.closed and s["epoch"] == self.epoch:
                 # Never expose a signed request URL or server-echoed input.
-                message = str(exc) if isinstance(exc, (RuntimeError, ValueError)) else type(exc).__name__
-                self.notify("asr_status", "有道识别失败：" + message)
+                message = error_message(exc) if isinstance(exc, (RuntimeError, ValueError)) else type(exc).__name__
+                self.notify("asr_status", msg("有道识别失败：{error}",error=message))
         finally:
             s["pcm"].clear(); s["tail"].clear()
             if self.session is s and self.recording:
@@ -234,7 +235,7 @@ class YoudaoSpeech:
         async with DirectConnect(url, open_timeout=12, close_timeout=2, max_size=1024*1024, proxy=None) as ws:
             first = checked(json.loads(await asyncio.wait_for(ws.recv(),12)))
             if first.get("action") != "started":
-                raise RuntimeError("有道未返回启动确认")
+                raise RuntimeError(msg("有道未返回启动确认"))
             self.notify("asr_status", "有道已连接 · 正在上传遥控器语音")
             async def send():
                 first = True
@@ -254,7 +255,7 @@ class YoudaoSpeech:
                     except ConnectionClosedOK:
                         if api != "large" and s["ended"]:
                             return result.text(final_only=True)
-                        raise RuntimeError("有道提前断开，未输入不完整结果")
+                        raise RuntimeError(msg("有道提前断开，未输入不完整结果"))
                     # The short-stream service sends a confirmed final segment,
                     # then a closeCode=0 / errorCode=304 completion envelope.
                     # Accept it only after OUR end frame and all-final segments.
@@ -269,7 +270,7 @@ class YoudaoSpeech:
                         self.notify("partial", result.text())
                     if message.get("isEnd") is True or str(message.get("closeCode", "")) == "0":
                         if not s["ended"]:
-                            raise RuntimeError("有道提前结束，请重新说话")
+                            raise RuntimeError(msg("有道提前结束，请重新说话"))
                         return result.text(final_only=True)
             sender = asyncio.create_task(send())
             receiver = asyncio.create_task(receive())
@@ -281,7 +282,7 @@ class YoudaoSpeech:
                         return await receiver
                     text = await receiver
                     if not sender.done():
-                        raise RuntimeError("音频尚未发送完毕，有道已结束识别")
+                        raise RuntimeError(msg("音频尚未发送完毕，有道已结束识别"))
                     await sender
                     return text
             finally:

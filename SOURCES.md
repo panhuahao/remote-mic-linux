@@ -55,3 +55,10 @@ GTK/AT-SPI 用于剪贴板所有权与公开活动窗口元数据，libX11 只�
 - AppImage type2 runtime 来源 https://github.com/AppImage/type2-runtime ，下载资源 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64 。本次采用的文件 SHA256 为 617aa77314d57c8b8e4fae9c3f0b35af7b30d5529cb69e98f64f92510ed98a46。原许可证随包保存。
 - AppImage 捆绑 Python、PyGObject/GTK、pycairo、numpy、sherpa-onnx、bleak、dbus-fast、evdev、websockets、typing_extensions 及必要动态库、pw-cat 和 wl-clipboard。各自保留原许可；打包脚本记录准确版本、系统包名、版权文件和 Python dist-info 元数据。应用许可证不替代第三方许可证。
 - 上游功能对照另外固定至 03e96e92c9962acb8a7ef497db19089be46d97db；其中 SayAllAI、宏和按键方案存在可选私有组件入口，不包含在本项目中。具体差异见 docs/FEATURE_COMPARISON.md。
+
+## 0.5.0 Ubuntu 24 构建与 DEB（2026-11-05）
+
+- 分发运行库在 Ubuntu 24.04 构建，使用 Python 3.12；AppImage 与 DEB 共享相同的 AppDir。
+- 新增 GTK 输入法模块、GdkPixbuf loaders、GIO 的 dconf/GnuTLS 模块、Adwaita/hicolor 图标主题及 schemas。各组件版权文件随包保存。
+- PipeWire 服务及 pw-cat 改由宿主提供，不再打包较新系统的音频客户端或插件。
+- 原创打包、ABI 检查、宿主环境恢复和 DEB 构建脚本随本项目按 GPL-3.0-only 提供；第三方组件继续遵循各自许可证。

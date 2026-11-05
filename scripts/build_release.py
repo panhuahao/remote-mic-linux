@@ -12,7 +12,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 FILES = (
-    'README.md', 'LICENSE.md', 'SOURCES.md', 'CHANGELOG.md',
+    'README.md', 'README.en.md', '.dockerignore', 'packaging/ubuntu24/Dockerfile', 'scripts/build_ubuntu24.sh', 'scripts/check_deb_install.sh', 'LICENSE.md', 'SOURCES.md', 'CHANGELOG.md',
     'CONTRIBUTING.md', 'RELEASE.md', '.gitignore', 'requirements.txt',
     'config.example.json', 'run.sh', 'install.sh', 'install_model.py',
     'install_desktop.py', 'ui-preview.png', 'remote_bridge/theme.css',
@@ -59,6 +59,7 @@ def main():
             z.writestr(info, data)
     archives = [out/(stem+s) for s in ('.tar.gz','.zip')]
     archives.extend(sorted(out.glob(f'Remote-Mic-Linux-{version}-*.AppImage')))
+    archives.extend(sorted(out.glob(f'remote-mic-linux_{version}_*.deb')))
     (out/'SHA256SUMS').write_text(''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in archives))
     print(f'Built {len(paths)} public files into source archives:')
     for p in archives:

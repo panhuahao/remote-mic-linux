@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+from .i18n import msg
 import json
 import os
 from pathlib import Path
@@ -12,29 +13,29 @@ def validate_action(action):
     from .keyboard import codes
     if isinstance(action, dict):
         if not isinstance(action.get("app"), str) or not re.fullmatch(r"[A-Za-z0-9_.@+-]+\.desktop", action["app"]):
-            raise ValueError("应用动作必须指向已安装的 .desktop 应用")
+            raise ValueError(msg("应用动作必须指向已安装的 .desktop 应用"))
     elif isinstance(action, list):
         codes(action)
     else:
-        raise ValueError("动作必须是快捷键列表或应用对象")
+        raise ValueError(msg("动作必须是快捷键列表或应用对象"))
 
 def validate(config):
     from .keyboard import codes
     address = config.get("address", "")
     if address and not re.fullmatch(r"(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}", address):
-        raise ValueError("蓝牙地址格式应为 AA:BB:CC:DD:EE:FF")
+        raise ValueError(msg("蓝牙地址格式应为 AA:BB:CC:DD:EE:FF"))
     if not isinstance(config.get("mapping"), dict):
-        raise ValueError("mapping 必须是按键映射对象")
+        raise ValueError(msg("mapping 必须是按键映射对象"))
     for key, value in config["mapping"].items():
         codes([key])
         validate_action(value)
     for key, gestures in config.setdefault("gestures", {}).items():
         codes([key])
         if not isinstance(gestures, dict):
-            raise ValueError("手势配置格式错误")
+            raise ValueError(msg("手势配置格式错误"))
         for kind, action in gestures.items():
             if kind not in ("double", "hold"):
-                raise ValueError("未知按键手势")
+                raise ValueError(msg("未知按键手势"))
             validate_action(action)
     voice = config.setdefault("voice", {})
     voice.setdefault("mode", "local")
@@ -46,19 +47,19 @@ def validate(config):
     voice.setdefault("youdao_language", "zh-CHS")
     voice.setdefault("youdao_model", "multi-lang-stream-fast-v1")
     if voice["mode"] not in ("local", "youdao", "external"):
-        raise ValueError("未知语音模式")
+        raise ValueError(msg("未知语音模式"))
     if voice["youdao_api"] not in ("large", "short", "realtime", "realtime_short"):
-        raise ValueError("未知有道接口")
+        raise ValueError(msg("未知有道接口"))
     if voice["youdao_model"] not in ("multi-lang-stream-v1", "multi-lang-stream-fast-v1"):
-        raise ValueError("未知有道模型")
+        raise ValueError(msg("未知有道模型"))
     if not re.fullmatch(r"[A-Za-z0-9-]{2,20}", voice["youdao_language"]):
-        raise ValueError("有道语言代码格式错误")
+        raise ValueError(msg("有道语言代码格式错误"))
     if voice["language"] not in ("auto", "zh", "en", "ja", "ko", "yue"):
-        raise ValueError("未知识别语言")
+        raise ValueError(msg("未知识别语言"))
     codes(voice["paste_shortcut"])
     codes(config.get("voice_shortcut", []))
     if config.get("voice_shortcut_mode", "hold") not in ("hold", "toggle"):
-        raise ValueError("语音快捷键模式应为 hold 或 toggle")
+        raise ValueError(msg("语音快捷键模式应为 hold 或 toggle"))
     return config
 
 def read():
