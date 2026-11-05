@@ -149,7 +149,7 @@ chmod +x Remote-Mic-Linux-0.5.0-x86_64.AppImage
 ./Remote-Mic-Linux-0.5.0-x86_64.AppImage --install-model
 ```
 
-使用 DEB 安装的用户可运行 `remote-mic-linux --install-model`；下文其他 AppImage 参数也可传给 `remote-mic-linux`。
+使用 DEB 安装的用户可运行 `remote-mic-linux --install-model`。`remote-mic-linux` 只接受应用自身参数，如 `--install-model`、`--version`、`--self-test`；`--appimage-extract-and-run` 仅用于 AppImage。
 
 下载内容约 239 MB，默认保存到 `~/.cache/ubuntu-remote-bridge/sensevoice/`。下载器校验模型 SHA256 和词表 Git blob。官方下载不可用时，可明确选择镜像源，校验方式不变：
 

@@ -149,7 +149,7 @@ Use this mode to process speech on your computer. Once the model has been downlo
 ./Remote-Mic-Linux-0.5.0-x86_64.AppImage --install-model
 ```
 
-For a DEB installation, use `remote-mic-linux --install-model`. The other AppImage arguments documented here can also be passed to `remote-mic-linux`.
+For a DEB installation, use `remote-mic-linux --install-model`. The `remote-mic-linux` command accepts only application arguments, such as `--install-model`, `--version`, and `--self-test`; `--appimage-extract-and-run` is only for AppImage.
 
 The download is approximately 239 MB and is stored in `~/.cache/ubuntu-remote-bridge/sensevoice/` by default. The installer checks the model SHA256 and the vocabulary Git blob. If the official download is unavailable, you can explicitly select a mirror with the same integrity checks:
 
